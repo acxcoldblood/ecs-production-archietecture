@@ -1,5 +1,9 @@
 # Production-Style Full-Stack Deployment on AWS (ECS EC2)
 
+## Architecture Diagram
+
+![ECS Architecture](ECS-archietecture.drawio.png)
+
 ## Overview
 
 This project demonstrates a production-style microservices architecture built on AWS using Amazon ECS (EC2 launch type).
