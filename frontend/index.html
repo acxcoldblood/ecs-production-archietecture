@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ECS Fullstack Demo</title>
+    <style>
+      :root {
+        --bg-gradient: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+        --card-bg: rgba(255, 255, 255, 0.05);
+        --text-primary: #ffffff;
+        --text-secondary: #a0a0a0;
+        --accent-color: #00d2ff;
+        --accent-hover: #3a7bd5;
+        --error-color: #ff5f6d;
+        --success-color: #00b09b;
+        --font-family:
+          "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+        --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        --card-border: 1px solid rgba(255, 255, 255, 0.18);
+      }
+
+      body {
+        background: var(--bg-gradient);
+        color: var(--text-primary);
+        font-family: var(--font-family);
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        overflow: hidden; /* Prevent scrollbars generally */
+      }
+
+      .container {
+        background: var(--card-bg);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: var(--card-border);
+        padding: 3rem 4rem;
+        border-radius: 16px;
+        box-shadow: var(--card-shadow);
+        text-align: center;
+        max-width: 450px;
+        width: 90%;
+        transition: transform 0.3s ease;
+      }
+
+      .container:hover {
+        transform: translateY(-5px);
+      }
+
+      h1 {
+        margin: 0 0 0.5rem 0;
+        font-weight: 700;
+        font-size: 2rem;
+        letter-spacing: -0.5px;
+        background: linear-gradient(to right, #00d2ff, #3a7bd5);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      p.subtitle {
+        color: var(--text-secondary);
+        margin-bottom: 2.5rem;
+        font-size: 1rem;
+        font-weight: 400;
+      }
+
+      button {
+        background: linear-gradient(
+          135deg,
+          var(--accent-color),
+          var(--accent-hover)
+        );
+        color: white;
+        border: none;
+        padding: 14px 28px;
+        font-size: 1.1rem;
+        border-radius: 50px; /* Pill shape */
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 210, 255, 0.3);
+        font-weight: 600;
+        outline: none;
+        width: 100%;
+        max-width: 250px;
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 210, 255, 0.5);
+      }
+
+      button:active {
+        transform: translateY(1px);
+      }
+
+      button:disabled {
+        background: #555;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+        opacity: 0.7;
+      }
+
+      #status-container {
+        margin-top: 2.5rem;
+        min-height: 80px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .spinner {
+        border: 4px solid rgba(255, 255, 255, 0.1);
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border-left-color: var(--accent-color);
+        animation: spin 1s linear infinite;
+        display: none;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .result-box {
+        background-color: rgba(0, 0, 0, 0.3);
+        padding: 1.5rem;
+        border-radius: 8px;
+        width: 100%;
+        text-align: left;
+        font-family: "Fira Code", "Consolas", monospace;
+        font-size: 0.9rem;
+        color: var(--success-color);
+        overflow-x: auto;
+        display: none;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        box-sizing: border-box;
+        white-space: pre-wrap; /* Wrap long JSON lines */
+      }
+
+      .error-msg {
+        color: var(--error-color);
+        display: none;
+        font-size: 1rem;
+        margin-top: 0.5rem;
+        background: rgba(255, 95, 109, 0.1);
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 95, 109, 0.3);
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      footer {
+        margin-top: 3rem;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        opacity: 0.5;
+        letter-spacing: 0.5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>ECS Fullstack Demo</h1>
+      <p class="subtitle">Frontend + Backend running on ECS EC2</p>
+
+      <button id="check-status-btn">Check Backend Status</button>
+
+      <div id="status-container">
+        <div class="spinner" id="spinner"></div>
+        <pre class="result-box" id="result-box"></pre>
+        <div class="error-msg" id="error-msg"></div>
+      </div>
+
+      <footer>Running on Nginx &bull; Port 80</footer>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const btn = document.getElementById("check-status-btn");
+        const spinner = document.getElementById("spinner");
+        const resultBox = document.getElementById("result-box");
+        const errorMsg = document.getElementById("error-msg");
+
+        // Backend runs on port 5000
+        const API_URL = "/api/";
+
+        btn.addEventListener("click", async () => {
+          // Reset UI
+          resultBox.style.display = "none";
+          errorMsg.style.display = "none";
+          resultBox.textContent = "";
+          errorMsg.textContent = "";
+
+          // Show loading state
+          btn.disabled = true;
+          btn.textContent = "Checking...";
+          spinner.style.display = "block";
+
+          try {
+            const response = await fetch(API_URL);
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+
+            // Show success
+            resultBox.textContent = JSON.stringify(data, null, 2);
+            resultBox.style.display = "block";
+          } catch (error) {
+            console.error("Fetch error:", error);
+            // Show error
+            errorMsg.textContent = `Backend Error: ${error.message}\nMake sure backend is running on port 5000.`;
+            errorMsg.style.display = "block";
+          } finally {
+            // Restore button state
+            spinner.style.display = "none";
+            btn.disabled = false;
+            btn.textContent = "Check Backend Status";
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
